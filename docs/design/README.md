@@ -14,4 +14,4 @@ Start with the [executive summary](executive-summary.md) for the idea in two min
 | [Patent notes](patent-notes.md) | How Ketra's colour-hold system works and what a DIY build can replicate |
 | [Q&A log](qa-log.md) | Answers to the follow-up questions on network, reference lamp, instruments, jig and addressing |
 
-Diagrams live in [`diagrams/`](diagrams/) as PNG files.
+Diagrams live in the `diagrams/` folder as PNG files.

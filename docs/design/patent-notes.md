@@ -1,6 +1,6 @@
 # Patent notes
 
-Ketra's colour-hold system is an accurate per-channel model plus infrequent optical correction, not mainly a sensor trick. These notes come from the published Lutron/Ketra patents, not the PDFs in [`docs/patents/`](../patents/), which the research session couldn't open. For notes on those two PDFs, see [`docs/sources/`](../sources/).
+Ketra's colour-hold system is an accurate per-channel model plus infrequent optical correction, not mainly a sensor trick. These notes come from the published Lutron/Ketra patents, not the two patent PDFs ([RE49246](../patents/RE49246.pdf) and [12,052,807](../patents/12052807.pdf)), which the research session couldn't open. For notes on those two PDFs, see [RE49246](../sources/patent-RE49246.md) and [12,052,807](../sources/patent-12052807.md).
 
 ## How Ketra's colour-hold system works
 

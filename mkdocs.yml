@@ -1,0 +1,58 @@
+site_name: metameric-led
+site_description: A DIY controller that keeps a multi-channel LED strip looking the same colour as temperature, brightness and age change.
+site_url: https://thetimetraveler.github.io/metameric-led/
+repo_url: https://github.com/thetimetraveler/metameric-led
+repo_name: thetimetraveler/metameric-led
+edit_uri: ""
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: { icon: material/weather-night, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.details
+
+nav:
+  - Home: index.md
+  - Design:
+      - Overview: design/README.md
+      - Executive summary: design/executive-summary.md
+      - Principles: design/principles.md
+      - System design: design/system-design.md
+      - Decision log: design/decision-log.md
+      - Features:
+          - Overview: design/features/README.md
+          - Colour mixing: design/features/colour-mixing.md
+          - Temperature compensation: design/features/temperature-compensation.md
+          - Optical feedback: design/features/optical-feedback.md
+          - Calibration: design/features/calibration.md
+          - Fixture matching and aging: design/features/fixture-matching-and-aging.md
+          - Home Assistant integration: design/features/home-assistant-integration.md
+      - Parts and tools: design/parts-and-tools.md
+      - Open questions and risks: design/open-questions-and-risks.md
+      - Patent notes: design/patent-notes.md
+      - Q&A log: design/qa-log.md
+  - Reference notes:
+      - ESPHome AS7341 sensor: sources/esphome-as7341.md
+      - Patent RE49246: sources/patent-RE49246.md
+      - Patent 12,052,807: sources/patent-12052807.md

@@ -23,7 +23,7 @@ It matters in two ways:
 - **It makes the build possible.** Five LED channels can be mixed to imitate a white, and many different mixes give the same colour.
 - **It is also the trap.** Two lights that match to the eye can still make coloured objects look different, and a sensor with too few bands cannot tell the mixes apart. The build answers this with high-CRI white LEDs and a many-band spectral sensor.
 
-[Open the interactive metamerism demo](https://claude.ai/artifact/NkPrzZC7hK8L7FC9SoEG83) to rotate a 3D light box, switch the light, and watch two matching things separate. It is a separate page because a doc cannot run interactive 3D; the sketch above is the static version.
+[Open the interactive metamerism demo](https://thetimetraveler.github.io/metameric-led/demo/metamerism.html) to rotate a 3D light box, switch the light, and watch two matching things separate. It is a separate page because a doc cannot run interactive 3D; the sketch above is the static version.
 
 ## How the build keeps colour steady
 

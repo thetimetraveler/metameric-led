@@ -1,0 +1,498 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Metamerism Lab · metameric-led</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow reading column. The gallery box is the hero; its walls carry the colour of the light, its painting carries the vibrancy. Controls sit directly under it, the evidence (spectra, LED mix, paint-by-paint changes) below. The stage stays on a fixed dark surround so colour is judged only inside the room. */
+:root {
+  --bg: #e8eaed; --surface: #f5f6f8; --fg: #16181b; --muted: #576069; --line: #c6cbd2;
+  --accent: #3547c9; --accent-soft: rgba(53,71,201,.16); --gain: #1d7a46; --loss: #a8672a;
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15171a; --surface: #1e2125; --fg: #e9ebee; --muted: #9ba2ac; --line: #353a41;
+  --accent: #93a1ff; --accent-soft: rgba(147,161,255,.2); --gain: #4cc283; --loss: #e0a060; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1e2125; --fg: #e9ebee; --muted: #9ba2ac; --line: #353a41;
+  --accent: #93a1ff; --accent-soft: rgba(147,161,255,.2); --gain: #4cc283; --loss: #e0a060; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 400 15px/1.55 var(--body); padding-inline: 16px; padding-block: 28px 48px; }
+main { max-width: 940px; margin-inline: auto; display: flex; flex-direction: column; gap: 22px; }
+h1 { font: 700 clamp(30px, 6vw, 44px)/1.05 var(--display); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+h2 { font: 600 20px/1.2 var(--display); margin: 0 0 6px; letter-spacing: -.01em; text-wrap: balance; }
+h3 { font: 600 13px var(--body); margin: 0 0 8px; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.lead { font-size: 17px; margin-top: 12px; }
+.eyebrow a { color: inherit; }
+.analogy { margin-top: 10px; color: var(--muted); }
+.small { font-size: 12.5px; color: var(--muted); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 10; background: #23262a; border-radius: 10px; overflow: hidden; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.stage:active { cursor: grabbing; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+.tag { position: absolute; top: 10px; font: 500 12px/1.25 var(--body); color: #f1f3f6; background: rgba(12,14,17,.62); border-radius: 6px; padding: 6px 10px; max-width: 44%; pointer-events: none; }
+.tag b { display: block; font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #aab1bb; margin-bottom: 1px; }
+.tag.a { left: 10px; } .tag.b { right: 10px; text-align: right; }
+.tag[hidden] { display: none; }
+.hint, .resetview { position: absolute; bottom: 10px; font: 500 11px var(--mono); color: #d4d8de; background: rgba(0,0,0,.5); border-radius: 4px; padding: 5px 8px; }
+.hint { left: 10px; pointer-events: none; }
+.resetview { right: 10px; border: 0; cursor: pointer; }
+.resetview:hover { background: rgba(0,0,0,.75); }
+.divider { position: absolute; top: 0; bottom: 0; width: 44px; margin-left: -22px; cursor: ew-resize; touch-action: none; display: flex; align-items: center; justify-content: center; }
+.divider::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: rgba(255,255,255,.92); box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.knob { position: relative; width: 34px; height: 34px; border-radius: 50%; background: #fff; color: #22262b; box-shadow: 0 1px 6px rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; font: 600 13px var(--body); letter-spacing: -1px; }
+.divider:focus-visible { outline: none; } .divider:focus-visible .knob { outline: 3px solid var(--accent); outline-offset: 2px; }
+.glfail[hidden] { display: none; }
+.glfail { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #d4d8de; font-size: 14px; }
+.verdict { font-size: 14.5px; max-width: none; }
+.verdict b { font-weight: 600; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px 28px; }
+.ctl.wide { grid-column: 1 / -1; }
+.ctl label.lab, .ctl .lab { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 500; margin-bottom: 6px; }
+.ctl output { white-space: nowrap; font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.ctl .ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 2px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.wallsw { display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--line); vertical-align: -4px; margin-right: 8px; }
+.seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.seg button { background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: 500 14px var(--body); cursor: pointer; text-align: left; }
+.seg button small { display: block; font-weight: 400; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.seg button:hover:not([aria-pressed="true"]) { border-color: var(--accent); }
+.seg button .dots { display: flex; gap: 3px; margin-top: 6px; }
+.seg button .dots i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; margin: 10px 0 4px; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--fg); vertical-align: middle; margin-right: 6px; }
+.legend i.b { border-color: var(--accent); }
+.legend i.d { border-top-style: dashed; border-color: var(--muted); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px 28px; align-items: start; }
+.scroll { overflow-x: auto; }
+.scroll svg { display: block; min-width: 440px; width: 100%; height: auto; }
+.ax { stroke: var(--line); stroke-width: 1; }
+.tick { fill: var(--muted); font: 11px var(--mono); text-anchor: middle; }
+.ytitle { fill: var(--muted); font: 11px var(--body); }
+.led { display: grid; grid-template-columns: 62px 1fr 92px; gap: 10px; align-items: center; padding-block: 5px; font-size: 13px; }
+.led .nm { font: 500 12px var(--mono); display: flex; align-items: center; gap: 6px; }
+.led .nm i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+.bars { display: flex; flex-direction: column; gap: 3px; }
+.bar { height: 7px; border-radius: 4px; background: var(--line); position: relative; overflow: hidden; }
+.bar > span { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+.bar.a > span { background: var(--muted); } .bar.b > span { background: var(--accent); }
+.led .v { font: 12px var(--mono); text-align: right; color: var(--muted); }
+.prow { display: grid; grid-template-columns: 112px 26px 26px 1fr 46px; gap: 10px; align-items: center; padding-block: 5px; border-top: 1px solid var(--line); font-size: 13px; }
+.prow.head { font: 500 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-top: 0; padding-block: 0 4px; }
+.sw { width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--line); }
+.div { position: relative; height: 10px; }
+.div::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+.div > span { position: absolute; top: 1px; bottom: 1px; border-radius: 3px; }
+.num { font-family: var(--mono); text-align: right; font-size: 12.5px; }
+.pop { box-shadow: inset 3px 0 0 var(--accent); padding-left: 6px; margin-left: -9px; background: var(--accent-soft); border-radius: 0 4px 4px 0; }
+@media (max-width: 600px) {
+  .stage { aspect-ratio: 4 / 3; }
+  .tag { font-size: 11px; max-width: 46%; }
+  .prow { grid-template-columns: 92px 24px 24px 1fr 40px; gap: 8px; }
+  .sw { width: 24px; height: 24px; }
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<main>
+  <header>
+    <div class="eyebrow">metameric-led · interactive companion · <a href="../">design docs</a></div>
+    <h1>Metamerism Lab</h1>
+    <p class="lead">Same white, different spectrum. Drag the divider across the room: the walls stay identical, but the paint does not.</p>
+    <p class="analogy">Think of a sound engineer who keeps the overall loudness the same but brings the vocals forward. Here the white you see is the loudness, and the spectrum behind it is the mix.</p>
+  </header>
+
+  <section aria-label="3D gallery room">
+    <div class="stage" id="stage">
+      <canvas id="gl" aria-label="3D gallery room with a painting, split between a standard white and a vibrancy-tuned white"></canvas>
+      <div class="glfail" id="glfail" hidden>The 3D view needs WebGL, which this browser has turned off. The numbers below still work.</div>
+      <div class="tag a" id="tagA"><b>A · Standard white</b><span id="tagAsub"></span></div>
+      <div class="tag b" id="tagB"><b>B · Vibrancy on</b><span id="tagBsub"></span></div>
+      <div class="divider" id="divider" role="slider" tabindex="0" aria-label="Compare A and B" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><div class="knob">&lsaquo;&rsaquo;</div></div>
+      <span class="hint">Drag the room to rotate · drag the divider to compare</span>
+      <button class="resetview" id="resetView" type="button">Reset view</button>
+    </div>
+    <p class="verdict" id="verdict" style="margin-top:12px" aria-live="polite"></p>
+  </section>
+
+  <section class="panel" aria-label="Controls">
+    <div class="controls">
+      <div class="ctl">
+        <label class="lab" for="cct"><span><i class="wallsw" id="wallsw"></i>Colour temperature</span> <output id="cctOut" for="cct"></output></label>
+        <input id="cct" type="range" min="2200" max="6500" step="100" value="3000">
+        <div class="ends"><span>2200 K warm</span><span>6500 K cool</span></div>
+      </div>
+      <div class="ctl">
+        <label class="lab" for="adapt"><span>Eye adaptation</span> <output id="adaptOut" for="adapt"></output></label>
+        <input id="adapt" type="range" min="0" max="100" step="5" value="50">
+        <div class="ends"><span>raw lamp colour</span><span>fully neutralised</span></div>
+      </div>
+      <div class="ctl wide">
+        <div class="lab" id="famLab">Make these colours pop on side B</div>
+        <div class="seg" id="famSeg" role="group" aria-labelledby="famLab"></div>
+      </div>
+      <div class="ctl wide">
+        <label class="lab" for="amt"><span>Vibrancy amount</span> <output id="amtOut" for="amt"></output></label>
+        <input id="amt" type="range" min="0" max="100" step="1" value="85">
+        <div class="ends"><span>standard</span><span>as far as the five LEDs can go</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-spec">
+    <h2 id="h-spec">What the lamp is doing</h2>
+    <p>Both halves have exactly the same colour of white, so the walls match. Side B gets there with a different recipe of the same five LED channels. Paint reflects only the wavelengths it is given, so a different recipe makes some paints richer and others duller.</p>
+    <div class="cols" style="margin-top:14px">
+      <div>
+        <h3>Light spectrum</h3>
+        <div class="legend" aria-hidden="true"><span><i></i>A · standard</span><span><i class="b"></i>B · vibrancy</span><span><i class="d"></i>Natural light of the same CCT</span></div>
+        <div class="scroll"><svg id="spec" viewBox="0 0 640 250" role="img" aria-label="Spectra of the standard and vibrancy lights"></svg></div>
+      </div>
+      <div>
+        <h3>LED recipe, share of the light</h3>
+        <div class="legend" aria-hidden="true"><span><i></i>A</span><span><i class="b"></i>B</span></div>
+        <div id="leds"></div>
+        <p class="small" style="margin-top:10px">Five channels and one fixed white leave only two free dials. That is why vibrancy picks a direction (reds and magentas, greens and teals, yellows and blues) rather than a single colour. The 450 nm blue channel barely moves, because it alone sets the blue content of the white.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-paint">
+    <h2 id="h-paint">What happens to each paint</h2>
+    <p>Chroma is how colourful a paint looks (CIELAB C*), measured against the shared white. The bar shows how side B compares with side A.</p>
+    <div style="margin-top:12px" id="paints"></div>
+  </section>
+
+  <p class="small">Model: CIE 1931 2° observer (Wyman et al. multi-lobe fit), a blackbody white at the chosen CCT, and five Gaussian LED channels at 450, 510, 570, 610 and 650 nm (σ = 9 nm). Paints are smooth, illustrative reflectance curves, not measured pigments. Side A is the LED recipe closest to natural light at that CCT. Side B moves along the two directions that leave the white unchanged. Eye adaptation partly rebalances colours toward daylight, as your eye does. The 3D room uses plain diffuse shading; every colour comes from the spectral maths. This is a teaching model, not a measurement of the strip in the build.</p>
+</main>
+
+<script>
+// ---- colour maths (CIE 1931 2-degree observer, Wyman et al. 2013 multi-lobe fit) ----
+const WL = []; for (let l = 380; l <= 780; l += 5) WL.push(l);
+const lobe = (l, m, a, b) => { const t = (l - m) / (l < m ? a : b); return Math.exp(-0.5 * t * t); };
+const cmf = l => [
+  1.056 * lobe(l, 599.8, 37.9, 31.0) + 0.362 * lobe(l, 442.0, 16.0, 26.7) - 0.065 * lobe(l, 501.1, 20.4, 26.2),
+  0.821 * lobe(l, 568.8, 46.9, 40.5) + 0.286 * lobe(l, 530.9, 16.3, 31.1),
+  1.217 * lobe(l, 437.0, 11.8, 36.0) + 0.681 * lobe(l, 459.0, 26.0, 13.8)
+];
+const CMF = WL.map(cmf);
+const xyzOf = spd => { let X = 0, Y = 0, Z = 0; for (let i = 0; i < WL.length; i++) { X += spd[i] * CMF[i][0]; Y += spd[i] * CMF[i][1]; Z += spd[i] * CMF[i][2]; } return [X, Y, Z]; };
+const planck = (l, T) => { const m = l * 1e-9; return Math.pow(m, -5) / (Math.exp(1.4388e-2 / (m * T)) - 1); };
+const unitY = s => { const Y = xyzOf(s)[1]; return s.map(v => v / Y); };
+const blackbody = T => unitY(WL.map(l => planck(l, T)));
+const CENTERS = [450, 510, 570, 610, 650];
+const SIGMA = 9;
+const primary = (c, sigma) => unitY(WL.map(l => Math.exp(-0.5 * ((l - c) / sigma) ** 2)));
+const uv = ([X, Y, Z]) => { const d = X + 15 * Y + 3 * Z; return [4 * X / d, 9 * Y / d]; };
+const duv = (a, b) => { const p = uv(a), q = uv(b); return Math.hypot(p[0] - q[0], p[1] - q[1]); };
+const D65 = [0.9505, 1, 1.089];
+const toLin = ([X, Y, Z]) => [3.2406 * X - 1.5372 * Y - 0.4986 * Z, -0.9689 * X + 1.8758 * Y + 0.0415 * Z, 0.0557 * X - 0.2040 * Y + 1.0570 * Z];
+const enc = v => { v = Math.min(1, Math.max(0, v)); return v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055; };
+const css = rgb => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+const lightRgb = xyz => { const lin = toLin(xyz), m = Math.max(...lin, 1e-9); return lin.map(v => Math.round(255 * enc(v * 0.92 / m))); };
+
+// ---- Lab (white = the light's own white, identical for both halves) ----
+const labOf = (xyz, W) => { const f = t => t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116; const fx = f(xyz[0] / W[0]), fy = f(xyz[1] / W[1]), fz = f(xyz[2] / W[2]); const L = 116 * fy - 16, a = 500 * (fx - fy), b = 200 * (fy - fz); return { L, a, b, C: Math.hypot(a, b), h: (Math.atan2(b, a) * 180 / Math.PI + 360) % 360 }; };
+const dE = (p, q) => Math.hypot(p.L - q.L, p.a - q.a, p.b - q.b);
+
+// ---- the painting's pigments: smooth reflectance curves, steep like real paint ----
+const lg = (l, c, w) => 1 / (1 + Math.exp(-(l - c) / w));
+const clip = v => Math.min(0.95, Math.max(0.02, v));
+const PIGMENTS = [
+  { id: 'paper', name: 'Paper white', r: l => 0.88 },
+  { id: 'grey', name: 'Mid grey', r: l => 0.3 },
+  { id: 'black', name: 'Black ink', r: l => 0.03 },
+  { id: 'red', name: 'Cadmium red', r: l => 0.03 + 0.85 * lg(l, 603, 8) },
+  { id: 'verm', name: 'Vermilion', r: l => 0.03 + 0.85 * lg(l, 588, 9) },
+  { id: 'orange', name: 'Orange', r: l => 0.03 + 0.85 * lg(l, 566, 9) },
+  { id: 'yellow', name: 'Cadmium yellow', r: l => 0.04 + 0.88 * lg(l, 532, 9) },
+  { id: 'lemon', name: 'Lemon yellow', r: l => 0.04 + 0.85 * lg(l, 506, 9) },
+  { id: 'leaf', name: 'Leaf green', r: l => 0.04 + 0.6 * lg(l, 488, 9) * (1 - lg(l, 588, 11)) },
+  { id: 'viridian', name: 'Viridian', r: l => 0.04 + 0.5 * lg(l, 470, 9) * (1 - lg(l, 560, 11)) },
+  { id: 'teal', name: 'Teal', r: l => 0.04 + 0.5 * lg(l, 440, 9) * (1 - lg(l, 535, 10)) },
+  { id: 'cerulean', name: 'Cerulean', r: l => 0.04 + 0.55 * lg(l, 425, 9) * (1 - lg(l, 505, 11)) },
+  { id: 'ultra', name: 'Ultramarine', r: l => 0.04 + 0.5 * (1 - lg(l, 478, 9)) + 0.1 * lg(l, 640, 12) },
+  { id: 'violet', name: 'Violet', r: l => 0.04 + 0.32 * (1 - lg(l, 462, 8)) + 0.3 * lg(l, 628, 10) },
+  { id: 'magenta', name: 'Magenta', r: l => 0.04 + 0.42 * (1 - lg(l, 492, 9)) + 0.8 * lg(l, 598, 9) },
+  { id: 'pink', name: 'Rose pink', r: l => 0.28 + 0.28 * (1 - lg(l, 500, 14)) + 0.4 * lg(l, 596, 14) },
+  { id: 'skin', name: 'Peach', r: l => 0.22 + 0.5 * lg(l, 575, 28) - 0.05 * Math.exp(-(((l - 550) / 25) ** 2)) }
+].map(p => ({ ...p, refl: WL.map(l => clip(p.r(l))) }));
+
+// ---- small linear algebra ----
+function inv3(m) {
+  const [a, b, c, d, e, f, g, h, i] = m; const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g; const det = a * A + b * B + c * C;
+  return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, -(a * f - c * d) / det, C / det, -(a * h - b * g) / det, (a * e - b * d) / det];
+}
+
+// ---- a rig = five LED channels aimed at one white (a blackbody point at CCT T) ----
+// Every weight vector w = w0 + c1*N1 + c2*N2 gives exactly the same white. N1, N2 are the "metameric black" directions.
+function rig(T) {
+  const B = blackbody(T), P = CENTERS.map(c => primary(c, SIGMA)), cols = P.map(xyzOf), target = xyzOf(B);
+  const M = [0, 1, 2].map(k => cols.map(c => c[k]));
+  const MMt = []; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) { let s = 0; for (let j = 0; j < 5; j++) s += M[r][j] * M[c][j]; MMt.push(s); }
+  const iv = inv3(MMt);
+  const proj = v => { // v - Mt (MMt)^-1 M v
+    const m = [0, 1, 2].map(r => { let s = 0; for (let j = 0; j < 5; j++) s += M[r][j] * v[j]; return s; });
+    const y = [0, 1, 2].map(a => iv[a * 3] * m[0] + iv[a * 3 + 1] * m[1] + iv[a * 3 + 2] * m[2]);
+    return v.map((x, j) => x - (M[0][j] * y[0] + M[1][j] * y[1] + M[2][j] * y[2]));
+  };
+  const N = [];
+  for (let k = 0; k < 5 && N.length < 2; k++) {
+    let v = proj(Array.from({ length: 5 }, (_, j) => j === k ? 1 : 0));
+    N.forEach(n => { const d = v.reduce((s, x, j) => s + x * n[j], 0); v = v.map((x, j) => x - d * n[j]); });
+    const nn = Math.hypot(...v); if (nn > 1e-6) N.push(v.map(x => x / nn));
+  }
+  const y0 = [0, 1, 2].map(a => iv[a * 3] * target[0] + iv[a * 3 + 1] * target[1] + iv[a * 3 + 2] * target[2]);
+  const wp = Array.from({ length: 5 }, (_, j) => M[0][j] * y0[0] + M[1][j] * y0[1] + M[2][j] * y0[2]);
+  const G = P.map(a => P.map(b => a.reduce((s, v, i) => s + v * b[i], 0))), bb = P.map(a => a.reduce((s, v, i) => s + v * B[i], 0));
+  const wAt = (c1, c2) => wp.map((v, j) => v + c1 * N[0][j] + c2 * N[1][j]);
+  const cost = w => { let s = 0; for (let i = 0; i < 5; i++) { s -= 2 * bb[i] * w[i]; for (let j = 0; j < 5; j++) s += w[i] * G[i][j] * w[j]; } return s; };
+  const feasible = w => w.every(v => v >= -1e-12);
+  let best = null, cx = 0, cy = 0, R = 1.6;
+  for (let round = 0; round < 4; round++) {
+    const n = 80; let bc = null;
+    for (let i = -n; i <= n; i++) for (let k = -n; k <= n; k++) {
+      const c1 = cx + R * i / n, c2 = cy + R * k / n, w = wAt(c1, c2);
+      if (!feasible(w)) continue; const cs = cost(w); if (!bc || cs < bc.cs) bc = { c1, c2, cs, w };
+    }
+    if (!bc) break; best = bc; cx = bc.c1; cy = bc.c2; R = R / 6;
+  }
+  const w0 = best ? best.w.map(v => Math.max(0, v)) : null;
+  // pigment XYZ per LED
+  const TT = PIGMENTS.map(p => P.map(pr => { let X = 0, Y = 0, Z = 0; for (let i = 0; i < WL.length; i++) { const v = pr[i] * p.refl[i]; X += v * CMF[i][0]; Y += v * CMF[i][1]; Z += v * CMF[i][2]; } return [X, Y, Z]; }));
+  const xyzPig = (i, w) => { const o = [0, 0, 0]; for (let j = 0; j < 5; j++) for (let k = 0; k < 3; k++) o[k] += w[j] * TT[i][j][k]; return o; };
+  const spd = w => WL.map((_, i) => P.reduce((s, p, j) => s + w[j] * p[i], 0));
+  return { T, B, P, target, N, w0, ok: !!w0, spd, xyzPig, lab: w => PIGMENTS.map((_, i) => labOf(xyzPig(i, w), target)), white: w => { const o = [0, 0, 0]; for (let j = 0; j < 5; j++) for (let k = 0; k < 3; k++) o[k] += w[j] * cols[j][k]; return o; } };
+}
+
+// ---- Vibrancy: slide along the metameric-black directions, aiming at a family of paints. Same white, different spectrum. ----
+// With five channels and a fixed white there are only two free dials, so a target is a direction, not a single colour.
+// Strength 1 = the chromatic paints move by BUDGET colour-difference units RMS (dE*ab), or the edge of what the LEDs can do.
+const FAMILIES = {
+  reds: { name: 'Reds & magentas', pop: { red: 1, verm: 1, magenta: 1, pink: .6, orange: .4 } },
+  greens: { name: 'Greens & teals', pop: { leaf: 1, viridian: 1, teal: 1 } },
+  sunny: { name: 'Yellows & blues', pop: { yellow: 1, lemon: 1, cerulean: 1, ultra: .6 } },
+  all: { name: 'Everything vivid', pop: null }
+};
+const BUDGET = 30, PEN = 0.35;
+function tune(r, famKey, s) {
+  if (!r.ok || s <= 0) return { w: r.w0.slice(), phi: 0, t: 0 };
+  const fam = FAMILIES[famKey], L0 = r.lab(r.w0), chroma = L0.map(l => l.C > 10), nch = chroma.filter(Boolean).length;
+  const wt = PIGMENTS.map((p, i) => !chroma[i] ? 0 : fam.pop === null ? 1 : (fam.pop[p.id] || 0));
+  const wAtT = (d, t) => r.w0.map((v, j) => v + t * d[j]);
+  const rms = (d, t) => { const L1 = r.lab(wAtT(d, t)); let q = 0; L1.forEach((l, i) => { if (chroma[i]) q += dE(l, L0[i]) ** 2; }); return Math.sqrt(q / nch); };
+  let best = null;
+  for (let deg = 0; deg < 360; deg += 4) {
+    const ph = deg * Math.PI / 180, d = r.N[0].map((v, j) => Math.cos(ph) * v + Math.sin(ph) * r.N[1][j]);
+    let tm = Infinity; d.forEach((v, j) => { if (v < 0) tm = Math.min(tm, r.w0[j] / -v); });
+    if (!isFinite(tm) || tm < 1e-6) continue;
+    let tb = tm; if (rms(d, tm) > BUDGET) { let lo = 0, hi = tm; for (let k = 0; k < 14; k++) { const mid = (lo + hi) / 2; if (rms(d, mid) > BUDGET) hi = mid; else lo = mid; } tb = lo; }
+    const L1 = r.lab(wAtT(d, tb));
+    let g = 0, gs = 0, oth = 0, os = 0;
+    L1.forEach((l, i) => { if (!chroma[i]) return; const dc = l.C - L0[i].C, de = dE(l, L0[i]); if (wt[i] > 0) { g += wt[i] * (dc - 0.5 * Math.max(0, de - Math.abs(dc))); gs += wt[i]; } if (wt[i] < 1) { oth += (1 - wt[i]) * de; os += 1 - wt[i]; } });
+    const score = (gs ? g / gs : 0) - PEN * (os ? oth / os : 0);
+    if (!best || score > best.score) best = { score, deg, d, tb };
+  }
+  const t = best.tb * Math.min(1, s);
+  return { w: wAtT(best.d, t).map(v => Math.max(0, v)), phi: best.deg, t, score: best.score };
+}
+
+const $ = id => document.getElementById(id);
+const FAM_ORDER = ['off', 'reds', 'greens', 'sunny'];
+const FAM_DOTS = { off: ['#8d9399', '#b5bac0'], reds: ['#d4262e', '#d1397f', '#e86a3a'], greens: ['#2e9e5c', '#1b9a93', '#8bc34a'], sunny: ['#f2c315', '#f3e05a', '#2b8fd6'] };
+const FAM_LABEL = { off: 'Standard (off)', reds: 'Reds & magentas', greens: 'Greens & teals', sunny: 'Yellows & blues' };
+const FAM_SUB = { off: 'both sides identical', reds: 'cadmium, vermilion, rose', greens: 'leaf, viridian, teal', sunny: 'lemon, gold, cerulean' };
+const state = { cct: 3000, fam: 'reds', amt: 0.85, adapt: 0.5, split: 0.5 };
+const PI = {}; PIGMENTS.forEach((p, i) => PI[p.id] = i);
+const LED_RGB = CENTERS.map(c => css(lightRgb(xyzOf(primary(c, SIGMA)))));
+const STRIP = CMF.map(c => css(lightRgb(c)));
+const rigCache = {}; const getRig = T => rigCache[T] || (rigCache[T] = rig(T));
+let cur = null;
+
+/* ---------- colour for any surface under a recipe ---------- */
+function makeLook(R, w) {
+  const W = R.target, a = state.adapt, k = W.map((v, i) => (1 - a) + a * D65[i] / v);
+  const mx = Math.max(...toLin(W.map((v, i) => v * k[i]))), e = 0.92 / mx;
+  const lin = xyz => toLin(xyz.map((v, i) => v * k[i])).map(v => Math.max(0, v * e));
+  const white = lin(W), mul = (c, f) => c.map(v => v * f);
+  return { white, wall: mul(white, 0.8), floor: mul(white, 0.42), ceil: mul(white, 0.85), frame: mul(white, 0.07), mat: mul(white, 0.9), lamp: mul(white, 1 / 0.92), pig: PIGMENTS.map((_, i) => lin(R.xyzPig(i, w))) };
+}
+const to8 = lin => lin.map(v => Math.round(255 * enc(v)));
+
+/* ---------- the painting ---------- */
+const AW = 1120, AH = 800;
+function drawArt(ctx, c) {
+  ctx.fillStyle = c.paper; ctx.fillRect(0, 0, AW, AH);
+  const circ = (x, y, r, f) => { ctx.fillStyle = f; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); };
+  const ell = (x, y, rx, ry, rot, f) => { ctx.fillStyle = f; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, 6.2832); ctx.fill(); };
+  const hill = (pts, f) => { ctx.fillStyle = f; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.bezierCurveTo(pts[i][0], pts[i][1], pts[i][2], pts[i][3], pts[i][4], pts[i][5]); ctx.lineTo(AW, AH); ctx.lineTo(0, AH); ctx.closePath(); ctx.fill(); };
+  const line = (pts, w, f) => { ctx.strokeStyle = f; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.bezierCurveTo(pts[i][0], pts[i][1], pts[i][2], pts[i][3], pts[i][4], pts[i][5]); ctx.stroke(); };
+  const flower = (x, y, r, n, petal, centre, rot) => { for (let i = 0; i < n; i++) { const t = rot + i / n * 6.2832; circ(x + Math.cos(t) * r, y + Math.sin(t) * r, r * 0.82, petal); } circ(x, y, r * 0.78, centre); };
+  // sun and sky
+  circ(868, 232, 205, c.orange); circ(820, 262, 158, c.red); circ(790, 292, 70, c.yellow); circ(790, 292, 28, c.lemon);
+  circ(222, 238, 138, c.cerulean); circ(268, 206, 92, c.paper); circ(300, 190, 40, c.lemon);
+  // fern of leaves, top left
+  [[88, 70, 62, 20, 0.4, c.leaf], [170, 54, 70, 21, 0.1, c.viridian], [262, 58, 66, 19, -0.25, c.teal], [352, 100, 62, 19, -0.7, c.ultra], [402, 178, 58, 18, -1.1, c.violet], [60, 156, 58, 18, 1.0, c.verm]].forEach(a => ell(a[0], a[1], a[2], a[3], a[4], a[5]));
+  // confetti
+  [[470, 70, 20, 'magenta'], [540, 130, 14, 'yellow'], [610, 62, 24, 'pink'], [690, 140, 16, 'cerulean'], [520, 220, 22, 'orange'], [610, 250, 14, 'violet'], [440, 300, 16, 'leaf'], [680, 300, 20, 'teal'], [1040, 90, 18, 'magenta'], [1060, 380, 22, 'cerulean']].forEach(a => circ(a[0], a[1], a[2], c[a[3]]));
+  // big leaves
+  ell(985, 330, 120, 34, -0.9, c.viridian); ell(1030, 250, 100, 28, -1.2, c.leaf); ell(930, 400, 110, 30, -0.5, c.teal); ell(520, 560, 130, 34, 0.25, c.leaf); ell(380, 590, 110, 30, -0.35, c.viridian);
+  // hills
+  hill([[0, 520], [200, 430, 420, 600, 640, 500], [800, 430, 1000, 520, 1120, 470]], c.violet);
+  hill([[0, 590], [240, 520, 470, 660, 720, 570], [880, 510, 1020, 590, 1120, 560]], c.ultra);
+  hill([[0, 660], [260, 600, 460, 720, 700, 650], [880, 590, 1020, 690, 1120, 650]], c.teal);
+  hill([[0, 724], [280, 680, 500, 770, 760, 722], [920, 680, 1040, 740, 1120, 716]], c.viridian);
+  // stems
+  [[150, 720, 150, 560], [330, 715, 345, 470], [505, 720, 520, 420], [655, 700, 640, 520], [820, 705, 835, 500], [980, 715, 960, 560]].forEach(s => line([[s[0], s[1]], [s[0] - 10, (s[1] + s[3]) / 2, s[0] + 14, (s[1] + s[3]) / 2, s[2], s[3]]], 11, c.leaf));
+  ell(240, 650, 70, 20, -0.6, c.leaf); ell(430, 640, 74, 20, 0.5, c.leaf); ell(740, 630, 70, 19, -0.5, c.leaf); ell(900, 640, 66, 18, 0.55, c.leaf);
+  // flowers
+  flower(150, 548, 30, 8, c.orange, c.red, 0.2); flower(345, 460, 36, 9, c.magenta, c.yellow, 0.1); flower(520, 410, 32, 8, c.pink, c.orange, 0.5);
+  flower(640, 510, 30, 7, c.violet, c.lemon, 0.3); flower(835, 490, 38, 9, c.red, c.yellow, 0); flower(960, 548, 30, 8, c.cerulean, c.lemon, 0.4);
+  // peaches, stones, ink
+  circ(1010, 640, 44, c.skin); circ(1066, 664, 36, c.skin); ell(1038, 596, 26, 12, -0.4, c.leaf);
+  circ(78, 700, 34, c.grey); circ(130, 740, 22, c.black); circ(34, 748, 20, c.paper);
+  line([[40, 380], [140, 310, 220, 440, 330, 370], [440, 300, 520, 420, 640, 360]], 8, c.black);
+  line([[690, 430], [760, 380, 820, 470, 900, 420]], 6, c.black);
+  [[560, 330], [600, 340], [640, 322]].forEach(p => circ(p[0], p[1], 6, c.black));
+}
+const artCanvas = [document.createElement('canvas'), document.createElement('canvas')];
+artCanvas.forEach(c => { c.width = AW; c.height = AH; });
+
+/* ---------- 3D scene ---------- */
+let renderer = null, scene, camera, tex = [], M = {}, needs = true, raf = 0, az = 0, el = 0.2, dist = 14.8;
+const TARGET = { x: 0, y: 4.3, z: 0 };
+const BW = 13, BH = 8.8, BD = 8;
+function initGL() {
+  try { renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: true }); } catch (e) { renderer = null; $('glfail').hidden = false; return; }
+  renderer.outputEncoding = THREE.sRGBEncoding; renderer.setClearColor(0x23262a);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(40, 16 / 10, 0.1, 100);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const pt = new THREE.PointLight(0xffffff, 0.62, 0); pt.position.set(0, 7.6, 2.6); scene.add(pt);
+  const lam = () => new THREE.MeshLambertMaterial({ color: 0xffffff });
+  M.wall = lam(); M.floor = lam(); M.ceil = lam(); M.frame = lam(); M.mat = lam(); M.lamp = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  tex = artCanvas.map(c => { const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t; });
+  M.art = new THREE.MeshLambertMaterial({ color: 0xffffff, map: tex[0] });
+  const plane = (mat, pw, ph, x, y, z, rx, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), mat); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); scene.add(m); return m; };
+  plane(M.floor, BW, BD, 0, 0, 0, -Math.PI / 2, 0);
+  plane(M.ceil, BW, BD, 0, BH, 0, Math.PI / 2, 0);
+  plane(M.wall, BW, BH, 0, BH / 2, -BD / 2, 0, 0);
+  plane(M.wall, BD, BH, -BW / 2, BH / 2, 0, 0, Math.PI / 2);
+  plane(M.wall, BD, BH, BW / 2, BH / 2, 0, 0, -Math.PI / 2);
+  const fr = new THREE.Mesh(new THREE.BoxGeometry(10.1, 7.4, 0.3), M.frame); fr.position.set(0, 4.35, -BD / 2 + 0.15); scene.add(fr);
+  plane(M.mat, 9.6, 6.9, 0, 4.35, -BD / 2 + 0.31, 0, 0);
+  plane(M.art, 9.1, 6.5, 0, 4.35, -BD / 2 + 0.32, 0, 0);
+  [-3.6, 0, 3.6].forEach(x => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.46, 0.34, 24), M.lamp); l.position.set(x, BH - 0.17, 1.2); scene.add(l); });
+  const resize = () => { const s = $('stage'); const w = s.clientWidth, h = s.clientHeight; if (!w || !h) return; renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); invalidate(); };
+  if (window.ResizeObserver) new ResizeObserver(resize).observe($('stage')); else window.addEventListener('resize', resize);
+  let drag = null; const stage = $('stage');
+  stage.addEventListener('pointerdown', e => { if (e.target.closest('#divider') || e.target.id === 'resetView') return; drag = { x: e.clientX, y: e.clientY }; stage.setPointerCapture(e.pointerId); });
+  stage.addEventListener('pointermove', e => { if (!drag) return; az = Math.max(-0.7, Math.min(0.7, az - (e.clientX - drag.x) * 0.005)); el = Math.max(0.02, Math.min(0.6, el + (e.clientY - drag.y) * 0.004)); drag = { x: e.clientX, y: e.clientY }; invalidate(); });
+  const end = () => { drag = null; }; stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  $('resetView').addEventListener('click', () => { az = 0; el = 0.2; invalidate(); });
+  resize();
+}
+function invalidate() { needs = true; if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
+const setC = (m, c) => m.color.setRGB(c[0], c[1], c[2]);
+function applyLook(i) {
+  const L = cur.look[i];
+  setC(M.wall, L.wall); setC(M.floor, L.floor); setC(M.ceil, L.ceil); setC(M.frame, L.frame); setC(M.mat, L.mat); setC(M.lamp, L.lamp);
+  M.art.map = tex[i];
+}
+function draw() {
+  if (!renderer || !needs || !cur) return; needs = false;
+  camera.position.set(TARGET.x + dist * Math.cos(el) * Math.sin(az), TARGET.y + dist * Math.sin(el), TARGET.z + dist * Math.cos(el) * Math.cos(az));
+  camera.lookAt(TARGET.x, TARGET.y, TARGET.z);
+  const W = $('stage').clientWidth, H = $('stage').clientHeight, sx = Math.round(state.split * W);
+  renderer.setScissorTest(true); renderer.setViewport(0, 0, W, H);
+  renderer.setScissor(0, 0, sx, H); applyLook(0); renderer.render(scene, camera);
+  renderer.setScissor(sx, 0, W - sx, H); applyLook(1); renderer.render(scene, camera);
+  renderer.setScissorTest(false);
+}
+
+/* ---------- plots ---------- */
+const PX0 = 40, PX1 = 624, PY0 = 190, PY1 = 16;
+const psx = l => PX0 + (l - 380) / 400 * (PX1 - PX0);
+const pline = (a, sy) => a.map((v, i) => (i ? 'L' : 'M') + psx(WL[i]).toFixed(1) + ' ' + sy(v).toFixed(1)).join('');
+const parea = (a, sy) => pline(a, sy) + `L${psx(780)} ${PY0}L${psx(380)} ${PY0}Z`;
+function renderSpec(R, wA, wB) {
+  const sA = R.spd(wA), sB = R.spd(wB), ymax = Math.max(...sA, ...sB, ...R.B) * 1.05, sy = v => PY0 - v / ymax * (PY0 - PY1);
+  let s = `<line class="ax" x1="${PX0}" x2="${PX1}" y1="${PY0}" y2="${PY0}"/>`;
+  R.P.forEach((p, j) => { s += `<path d="${parea(p.map(v => v * wB[j]), sy)}" fill="${LED_RGB[j]}" fill-opacity=".5"/>`; });
+  s += `<path d="${pline(R.B, sy)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+  s += `<path d="${pline(sA, sy)}" fill="none" stroke="var(--fg)" stroke-width="2"/><path d="${pline(sB, sy)}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+  WL.forEach((l, i) => { const w = (PX1 - PX0) / 80 + .6; s += `<rect x="${(psx(l) - w / 2).toFixed(1)}" y="${PY0 + 6}" width="${w.toFixed(1)}" height="9" fill="${STRIP[i]}"/>`; });
+  for (let l = 400; l <= 750; l += 50) s += `<line class="ax" x1="${psx(l)}" x2="${psx(l)}" y1="${PY0 + 15}" y2="${PY0 + 20}"/><text class="tick" x="${psx(l)}" y="${PY0 + 34}">${l}</text>`;
+  s += `<text class="tick" x="${PX1}" y="${PY0 + 50}" style="text-anchor:end">wavelength, nm</text><text class="ytitle" x="${PX0}" y="11">Relative power</text>`;
+  $('spec').innerHTML = s;
+}
+function renderLeds(wA, wB) {
+  const sa = wA.reduce((x, y) => x + y, 0), sb = wB.reduce((x, y) => x + y, 0);
+  $('leds').innerHTML = CENTERS.map((c, j) => { const a = wA[j] / sa, b = wB[j] / sb; return `<div class="led"><div class="nm"><i style="background:${LED_RGB[j]}"></i>${c} nm</div><div class="bars"><div class="bar a"><span style="width:${(a * 100).toFixed(1)}%"></span></div><div class="bar b"><span style="width:${(b * 100).toFixed(1)}%"></span></div></div><div class="v">${(a * 100).toFixed(0)}% → ${(b * 100).toFixed(0)}%</div></div>`; }).join('');
+}
+function renderPaints(labA, labB, look) {
+  let s = `<div class="prow head"><span>Paint</span><span>A</span><span>B</span><span>Chroma change, B vs A</span><span style="text-align:right">ΔC*</span></div>`;
+  const fam = FAMILIES[state.fam];
+  PIGMENTS.forEach((p, i) => {
+    if (i < 3) return;
+    const dc = labB[i].C - labA[i].C, mag = Math.min(1, Math.abs(dc) / 40) * 50, hit = fam && fam.pop && fam.pop[p.id] >= 0.6 && state.fam !== 'off';
+    const sw = k => css(to8(look[k].pig[i]));
+    s += `<div class="prow"><span class="${hit ? 'pop' : ''}">${p.name}</span><i class="sw" style="background:${sw(0)}"></i><i class="sw" style="background:${sw(1)}"></i><div class="div"><span style="${dc >= 0 ? 'left:50%' : 'right:50%'};width:${mag.toFixed(1)}%;background:${dc >= 0 ? 'var(--gain)' : 'var(--loss)'}"></span></div><span class="num">${dc >= 0 ? '+' : ''}${dc.toFixed(0)}</span></div>`;
+  });
+  $('paints').innerHTML = s;
+}
+
+/* ---------- update ---------- */
+function update() {
+  const R = getRig(state.cct); const wA = R.w0;
+  const wB = state.fam === 'off' ? wA : tune(R, state.fam, state.amt).w;
+  const look = [makeLook(R, wA), makeLook(R, wB)];
+  cur = { R, wA, wB, look };
+  [0, 1].forEach(i => { const ctx = artCanvas[i].getContext('2d'), c = {}; PIGMENTS.forEach((p, k) => c[p.id] = css(to8(look[i].pig[k]))); drawArt(ctx, c); if (tex[i]) tex[i].needsUpdate = true; });
+  const labA = R.lab(wA), labB = R.lab(wB), wd = duv(R.white(wA), R.white(wB));
+  const fam = FAMILIES[state.fam], on = state.fam !== 'off' && state.amt > 0;
+  $('cctOut').textContent = state.cct + ' K'; $('adaptOut').textContent = Math.round(state.adapt * 100) + '%'; $('amtOut').textContent = Math.round(state.amt * 100) + '%';
+  $('wallsw').style.background = css(to8(look[0].wall));
+  $('amt').disabled = state.fam === 'off';
+  document.querySelectorAll('#famSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.fam === state.fam)));
+  $('tagAsub').textContent = state.cct + ' K · standard LED mix';
+  $('tagBsub').textContent = on ? state.cct + ' K · ' + FAM_LABEL[state.fam].toLowerCase() + ' · ' + Math.round(state.amt * 100) + '%' : state.cct + ' K · same as A';
+  let hits = [], others = [];
+  PIGMENTS.forEach((p, i) => { if (labA[i].C <= 10) return; const wt = fam && fam.pop ? (fam.pop[p.id] || 0) : 0; if (wt >= 0.6) hits.push(labB[i].C - labA[i].C); else others.push(dE(labA[i], labB[i])); });
+  const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+  $('verdict').innerHTML = on
+    ? `<b>Walls:</b> identical, Δu′v′ = ${wd.toFixed(4)}. <b>Painting:</b> ${FAM_LABEL[state.fam].toLowerCase()} gain ${mean(hits) >= 0 ? '+' : ''}${mean(hits).toFixed(0)} chroma on average, while the other paints drift by ΔE ${mean(others).toFixed(0)}. Same white, different spectrum.`
+    : `<b>Walls:</b> identical, Δu′v′ = ${wd.toFixed(4)}. <b>Painting:</b> identical too, because both sides use the same recipe. Pick a family above to re-mix the lamp on side B.`;
+  renderSpec(R, wA, wB); renderLeds(wA, wB); renderPaints(labA, labB, look);
+  invalidate();
+}
+let pend = 0; const schedule = () => { if (pend) return; pend = requestAnimationFrame(() => { pend = 0; update(); }); };
+
+/* ---------- controls ---------- */
+function buildFam() {
+  $('famSeg').innerHTML = FAM_ORDER.map(k => `<button type="button" data-fam="${k}" aria-pressed="false">${FAM_LABEL[k]}<small>${FAM_SUB[k]}</small><span class="dots">${FAM_DOTS[k].map(c => `<i style="background:${c}"></i>`).join('')}</span></button>`).join('');
+  $('famSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.fam = b.dataset.fam; if (state.fam !== 'off' && state.amt === 0) state.amt = 0.85, $('amt').value = 85; schedule(); });
+}
+function setSplit(v) { state.split = Math.max(0.02, Math.min(0.98, v)); $('divider').style.left = (state.split * 100) + '%'; $('divider').setAttribute('aria-valuenow', Math.round(state.split * 100)); $('tagA').hidden = state.split < 0.2; $('tagB').hidden = state.split > 0.8; invalidate(); }
+function initDivider() {
+  const dv = $('divider'); let on = false;
+  const move = e => { const r = $('stage').getBoundingClientRect(); setSplit((e.clientX - r.left) / r.width); };
+  dv.addEventListener('pointerdown', e => { on = true; dv.setPointerCapture(e.pointerId); move(e); e.stopPropagation(); });
+  dv.addEventListener('pointermove', e => { if (on) move(e); });
+  const end = () => { on = false; }; dv.addEventListener('pointerup', end); dv.addEventListener('pointercancel', end);
+  dv.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') { setSplit(state.split - 0.05); e.preventDefault(); } if (e.key === 'ArrowRight') { setSplit(state.split + 0.05); e.preventDefault(); } if (e.key === 'Home') setSplit(0.02); if (e.key === 'End') setSplit(0.98); });
+  setSplit(0.5);
+}
+$('cct').addEventListener('input', e => { state.cct = +e.target.value; schedule(); });
+$('adapt').addEventListener('input', e => { state.adapt = +e.target.value / 100; schedule(); });
+$('amt').addEventListener('input', e => { state.amt = +e.target.value / 100; schedule(); });
+buildFam(); initGL(); initDivider(); update();
+</script>
+
+</body></html>

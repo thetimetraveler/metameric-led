@@ -2,3 +2,4 @@
 *.swp
 .esphome/
 secrets.yaml
+site/
